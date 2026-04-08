@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление общежитием</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.95);
+        }
+        .card-header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            font-weight: bold;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .btn {
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-weight: 500;
+        }
+        .result-table {
+            max-height: 500px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        table {
+            font-size: 14px;
+        }
+        .nav-tabs .nav-link {
+            color: white;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            margin-right: 5px;
+            border-radius: 10px 10px 0 0;
+        }
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: #4facfe;
+        }
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+        }
+        .student-info {
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+        .clickable-row {
+            cursor: pointer;
+        }
+        .clickable-row:hover {
+            background-color: #f0f8ff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center text-white mb-4">🏢 Управление студенческим общежитием</h1>
+
+    <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab">📋 Студенты и фильтры</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab">📊 Отчёты</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab">⚙️ Действия</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+        <!-- Вкладка Студенты и фильтры -->
+        <div class="tab-pane fade show active" id="students" role="tabpanel">
+            <div class="card">
+                <div class="card-header">🔍 Фильтры и поиск</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Факультет</label>
+                            <select id="facultyFilter" class="form-select"></select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Курс</label>
+                            <select id="courseFilter" class="form-select">
+                                <option value="">Все курсы</option>
+                                <option value="1">1 курс</option>
+                                <option value="2">2 курс</option>
+                                <option value="3">3 курс</option>
+                                <option value="4">4 курс</option>
+                                <option value="5">5 курс</option>
+                                <option value="6">6 курс</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Группа</label>
+                            <select id="groupFilter" class="form-select">
+                                <option value="">Все группы</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Поиск по ФИО</label>
+                            <div class="input-group">
+                                <input type="text" id="searchNameInput" class="form-control" placeholder="Введите фамилию, имя...">
+                                <button id="searchByNameBtn" class="btn btn-outline-primary">🔍 Найти</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12 d-flex justify-content-end">
+                            <button id="applyFilterBtn" class="btn btn-primary">🔍 Применить фильтры</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-3">
+                <div class="card-header">📋 Список студентов (ФИО, комната, корпус)</div>
+                <div class="card-body result-table" id="studentsResult">
+                    <div class="alert alert-secondary">Выберите фильтры и нажмите "Применить фильтры"</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка Отчёты -->
+        <div class="tab-pane fade" id="reports" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">🏠 Проживающие</div>
+                        <div class="card-body">
+                            <button id="loadResidentsBtn" class="btn btn-success w-100">Загрузить проживающих</button>
+                            <div id="residentsResult" class="mt-2 result-table"></div>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">🪑 Свободные комнаты</div>
+                        <div class="card-body">
+                            <button id="loadFreeRoomsBtn" class="btn btn-info w-100">Загрузить свободные комнаты</button>
+                            <div id="freeRoomsResult" class="mt-2 result-table"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">💰 Должники</div>
+                        <div class="card-body">
+                            <button id="loadDebtsBtn" class="btn btn-warning w-100">Загрузить должников</button>
+                            <div id="debtsResult" class="mt-2 result-table"></div>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">📊 Статистика по корпусам</div>
+                        <div class="card-body">
+                            <button id="loadOccupancyBtn" class="btn btn-secondary w-100">Загрузить статистику</button>
+                            <div id="occupancyResult" class="mt-2 result-table"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка Действия (улучшенная: поиск студента по ФИО, затем действия) -->
+        <div class="tab-pane fade" id="actions" role="tabpanel">
+            <div class="card mb-3">
+                <div class="card-header">🔎 Выбор студента по ФИО</div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <input type="text" id="actionSearchInput" class="form-control" placeholder="Введите ФИО студента...">
+                        </div>
+                        <div class="col-md-2">
+                            <button id="actionSearchBtn" class="btn btn-primary w-100">Найти</button>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="clearSelectedStudent" class="btn btn-outline-secondary w-100">Сбросить выбранного</button>
+                        </div>
+                    </div>
+                    <div id="studentSearchResults" class="mt-3 result-table" style="max-height: 200px;"></div>
+                </div>
+            </div>
+
+            <div id="selectedStudentCard" class="card mb-3" style="display: none;">
+                <div class="card-header bg-success text-white">✅ Выбран студент</div>
+                <div class="card-body" id="selectedStudentInfo"></div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">🏠 Заселение</div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label>Корпус</label>
+                                <select id="settleBuilding" class="form-select" disabled>
+                                    <option value="">Сначала выберите студента</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label>Комната</label>
+                                <select id="settleRoom" class="form-select" disabled>
+                                    <option value="">Выберите корпус</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label>Дата заселения</label>
+                                <input type="date" id="settleDate" class="form-control" value="2025-09-01">
+                            </div>
+                            <button id="settleBtn" class="btn btn-primary" disabled>✅ Заселить</button>
+                            <div id="settleResult" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">🚪 Выселение</div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label>Дата выселения</label>
+                                <input type="date" id="evictDate" class="form-control" value="2025-12-31">
+                            </div>
+                            <button id="evictBtn" class="btn btn-danger" disabled>❌ Выселить</button>
+                            <div id="evictResult" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12 mt-3">
+                    <div class="card">
+                        <div class="card-header">✏️ Изменение данных / переселение</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label>Новое ФИО</label>
+                                    <input type="text" id="updateFio" class="form-control" placeholder="Оставьте пустым, если не меняете">
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Новая группа</label>
+                                    <select id="updateGroup" class="form-select">
+                                        <option value="">Без изменений</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Новый корпус (для переселения)</label>
+                                    <select id="updateBuilding" class="form-select">
+                                        <option value="">Без изменений</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mt-2">
+                                    <label>Новая комната</label>
+                                    <select id="updateRoom" class="form-select" disabled>
+                                        <option value="">Сначала выберите корпус</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mt-2 d-flex align-items-end">
+                                    <button id="updateStudentBtn" class="btn btn-warning w-100">✏️ Применить изменения</button>
+                                </div>
+                            </div>
+                            <div id="updateResult" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <small>API должен быть запущен на http://localhost:5183</small>
+    </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API_BASE = 'http://localhost:5183/api';
+    let allGroups = [];
+    let buildingsCache = [];
+    let freeRoomsCache = {};
+    let selectedStudent = null;
+
+    // --- Общие функции ---
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            let errorMsg = `HTTP ${response.status}`;
+            try {
+                const text = await response.text();
+                errorMsg += `: ${text.substring(0, 150)}`;
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
+        if (response.status === 204) return null;
+        return await response.json();
+    }
+
+    function renderTable(containerId, data, columns, onClickRow = null) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="alert alert-info">Нет данных</div>';
+            return;
+        }
+        let html = '<div class="table-responsive"><table class="table table-sm table-bordered table-hover"><thead><tr>';
+        columns.forEach(col => html += `<th>${col.title}</th>`);
+        html += '</thead><tbody>';
+        data.forEach((row, idx) => {
+            const rowClass = onClickRow ? 'clickable-row' : '';
+            html += `<tr class="${rowClass}" data-idx="${idx}">`;
+            columns.forEach(col => {
+                let value = row[col.field] ?? '';
+                if (col.field === 'dateIn' && value) value = new Date(value).toLocaleDateString();
+                if (col.field === 'dateOut' && value) value = new Date(value).toLocaleDateString();
+                if (col.field === 'totalDebt' && typeof value === 'number') value = value.toFixed(2) + ' ₽';
+                if (col.field === 'occupancyPercent' && typeof value === 'number') value = value.toFixed(1) + '%';
+                html += `<td>${escapeHtml(String(value))}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></tr></div>';
+        container.innerHTML = html;
+        if (onClickRow) {
+            const rows = container.querySelectorAll('.clickable-row');
+            rows.forEach((row, idx) => {
+                row.addEventListener('click', () => onClickRow(data[idx]));
+            });
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // --- Загрузка справочников для фильтров (первая вкладка) ---
+    async function loadFaculties() {
+        try {
+            const faculties = await apiRequest(`${API_BASE}/Faculties`);
+            const select = document.getElementById('facultyFilter');
+            select.innerHTML = '<option value="">Все факультеты</option>';
+            faculties.forEach(f => {
+                const option = document.createElement('option');
+                option.value = f.facultyName;
+                option.textContent = f.facultyName;
+                select.appendChild(option);
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadAllGroups() {
+        try {
+            allGroups = await apiRequest(`${API_BASE}/Groups`);
+        } catch(e) { console.error(e); }
+    }
+
+    function updateGroupsFilter() {
+        const faculty = document.getElementById('facultyFilter').value;
+        const course = document.getElementById('courseFilter').value;
+        let filtered = allGroups.filter(g => {
+            if (faculty && g.facultyName !== faculty) return false;
+            if (course && g.course != course) return false;
+            return true;
+        });
+        const select = document.getElementById('groupFilter');
+        select.innerHTML = '<option value="">Все группы</option>';
+        filtered.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g.groupName;
+            option.textContent = g.groupName;
+            select.appendChild(option);
+        });
+    }
+
+    // --- Загрузка студентов с фильтрацией (первая вкладка) ---
+    async function loadStudents() {
+        const faculty = document.getElementById('facultyFilter').value;
+        const course = document.getElementById('courseFilter').value;
+        const group = document.getElementById('groupFilter').value;
+        const search = document.getElementById('searchNameInput').value.trim();
+
+        let url = `${API_BASE}/Students?`;
+        const params = [];
+        if (faculty) params.push(`faculty=${encodeURIComponent(faculty)}`);
+        if (course) params.push(`course=${course}`);
+        if (group) params.push(`group=${encodeURIComponent(group)}`);
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+        url += params.join('&');
+
+        try {
+            const students = await apiRequest(url);
+            renderTable('studentsResult', students, [
+                { field: 'fio', title: 'ФИО' },
+                { field: 'roomNumber', title: 'Комната' },
+                { field: 'buildingName', title: 'Корпус' }
+            ]);
+        } catch(e) {
+            document.getElementById('studentsResult').innerHTML = `<div class="alert alert-danger">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    // --- Отчёты ---
+    async function loadResidents() {
+        try {
+            const data = await apiRequest(`${API_BASE}/Students/current-residents`);
+            renderTable('residentsResult', data, [
+                { field: 'fio', title: 'ФИО' },
+                { field: 'course', title: 'Курс' },
+                { field: 'groupName', title: 'Группа' },
+                { field: 'facultyName', title: 'Факультет' },
+                { field: 'buildingName', title: 'Корпус' },
+                { field: 'roomNumber', title: 'Комната' },
+                { field: 'dateIn', title: 'Дата заселения' }
+            ]);
+        } catch(e) {
+            document.getElementById('residentsResult').innerHTML = `<div class="alert alert-danger">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    async function loadFreeRooms() {
+        try {
+            const data = await apiRequest(`${API_BASE}/Reports/free-rooms`);
+            renderTable('freeRoomsResult', data, [
+                { field: 'buildingName', title: 'Корпус' },
+                { field: 'roomNumber', title: 'Комната' },
+                { field: 'placesCount', title: 'Всего мест' },
+                { field: 'freePlaces', title: 'Свободно мест' }
+            ]);
+        } catch(e) {
+            document.getElementById('freeRoomsResult').innerHTML = `<div class="alert alert-danger">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    async function loadDebts() {
+        try {
+            const data = await apiRequest(`${API_BASE}/Reports/debts`);
+            renderTable('debtsResult', data, [
+                { field: 'studentName', title: 'Студент' },
+                { field: 'course', title: 'Курс' },
+                { field: 'groupName', title: 'Группа' },
+                { field: 'totalDebt', title: 'Долг' }
+            ]);
+        } catch(e) {
+            document.getElementById('debtsResult').innerHTML = `<div class="alert alert-danger">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    async function loadOccupancy() {
+        try {
+            const data = await apiRequest(`${API_BASE}/Reports/occupancy`);
+            renderTable('occupancyResult', data, [
+                { field: 'buildingName', title: 'Корпус' },
+                { field: 'totalRooms', title: 'Всего комнат' },
+                { field: 'occupiedRooms', title: 'Занято комнат' },
+                { field: 'totalPlaces', title: 'Всего мест' },
+                { field: 'occupiedPlaces', title: 'Занято мест' },
+                { field: 'occupancyPercent', title: 'Заполняемость' }
+            ]);
+        } catch(e) {
+            document.getElementById('occupancyResult').innerHTML = `<div class="alert alert-danger">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    // --- Функции для действий (заселение, выселение, изменение) ---
+    async function loadBuildingsList() {
+        try {
+            const buildings = await apiRequest(`${API_BASE}/Buildings`);
+            buildingsCache = buildings.map(b => b.buildingName);
+            return buildingsCache;
+        } catch(e) {
+            try {
+                const freeRooms = await apiRequest(`${API_BASE}/Reports/free-rooms`);
+                const uniqueBuildings = [...new Set(freeRooms.map(r => r.buildingName))];
+                buildingsCache = uniqueBuildings;
+                return uniqueBuildings;
+            } catch(err) {
+                console.error("Не удалось загрузить список корпусов", err);
+                return [];
+            }
+        }
+    }
+
+    async function loadFreeRoomsByBuilding(buildingName) {
+        if (!buildingName) return [];
+        if (freeRoomsCache[buildingName]) return freeRoomsCache[buildingName];
+        try {
+            let url = `${API_BASE}/Reports/free-rooms`;
+            if (buildingName) url += `?building=${encodeURIComponent(buildingName)}`;
+            const rooms = await apiRequest(url);
+            const filtered = rooms.filter(r => r.buildingName === buildingName);
+            freeRoomsCache[buildingName] = filtered;
+            return filtered;
+        } catch(e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    // Поиск студентов по ФИО (для вкладки действий) – используем данные напрямую, без дополнительных запросов
+    async function performStudentSearch() {
+        const searchText = document.getElementById('actionSearchInput').value.trim();
+        if (!searchText) {
+            alert('Введите ФИО для поиска');
+            return;
+        }
+        try {
+            const students = await apiRequest(`${API_BASE}/Students?search=${encodeURIComponent(searchText)}`);
+            if (!students || students.length === 0) {
+                document.getElementById('studentSearchResults').innerHTML = '<div class="alert alert-info">Студенты не найдены</div>';
+                return;
+            }
+            // Отображаем таблицу с данными, которые уже пришли (комната, корпус, orderNumber)
+            renderTable('studentSearchResults', students, [
+                { field: 'fio', title: 'ФИО' },
+                { field: 'passportNum', title: 'Паспорт' },
+                { field: 'groupName', title: 'Группа' },
+                { field: 'roomNumber', title: 'Комната' },
+                { field: 'buildingName', title: 'Корпус' }
+            ], (student) => selectStudentForActions(student));
+        } catch (error) {
+            console.error(error);
+            document.getElementById('studentSearchResults').innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`;
+        }
+    }
+
+    async function selectStudentForActions(student) {
+        selectedStudent = student;
+        // Отображаем карточку выбранного студента
+        const card = document.getElementById('selectedStudentCard');
+        const infoDiv = document.getElementById('selectedStudentInfo');
+        const isResident = !!student.roomNumber;
+        infoDiv.innerHTML = `
+            <strong>${student.fio}</strong><br>
+            Паспорт: ${student.passportNum}<br>
+            Группа: ${student.groupName || '—'}<br>
+            Проживание: ${isResident ? `ком. ${student.roomNumber}, корп. ${student.buildingName}` : 'не проживает'}
+        `;
+        card.style.display = 'block';
+
+        // Настройка форм в зависимости от статуса проживания
+        if (!isResident) {
+            await enableSettleForm();
+            document.getElementById('settleBtn').disabled = false;
+        } else {
+            document.getElementById('settleBuilding').disabled = true;
+            document.getElementById('settleRoom').disabled = true;
+            document.getElementById('settleBtn').disabled = true;
+            document.getElementById('settleResult').innerHTML = '<div class="alert alert-warning">Студент уже проживает. Для заселения сначала выселите.</div>';
+        }
+
+        if (isResident) {
+            document.getElementById('evictBtn').disabled = false;
+        } else {
+            document.getElementById('evictBtn').disabled = true;
+            document.getElementById('evictResult').innerHTML = '<div class="alert alert-warning">Студент не проживает.</div>';
+        }
+
+        document.getElementById('updateFio').value = '';
+        document.getElementById('updateGroup').value = '';
+        document.getElementById('updateBuilding').value = '';
+        document.getElementById('updateRoom').innerHTML = '<option value="">Без изменений</option>';
+        document.getElementById('updateRoom').disabled = true;
+        document.getElementById('updateStudentBtn').disabled = false;
+    }
+
+    async function enableSettleForm() {
+        const buildings = await loadBuildingsList();
+        const buildingSelect = document.getElementById('settleBuilding');
+        buildingSelect.innerHTML = '<option value="">Выберите корпус</option>';
+        buildings.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            buildingSelect.appendChild(opt);
+        });
+        buildingSelect.disabled = false;
+        document.getElementById('settleRoom').innerHTML = '<option value="">Выберите корпус</option>';
+        document.getElementById('settleRoom').disabled = true;
+    }
+
+    document.getElementById('settleBuilding').addEventListener('change', async (e) => {
+        const building = e.target.value;
+        if (building && selectedStudent && !selectedStudent.roomNumber) {
+            const rooms = await loadFreeRoomsByBuilding(building);
+            const roomSelect = document.getElementById('settleRoom');
+            roomSelect.innerHTML = '<option value="">Выберите комнату</option>';
+            rooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.roomId;
+                opt.textContent = `${r.roomNumber} (свободно мест: ${r.freePlaces})`;
+                roomSelect.appendChild(opt);
+            });
+            roomSelect.disabled = false;
+        } else {
+            document.getElementById('settleRoom').innerHTML = '<option value="">Выберите корпус</option>';
+            document.getElementById('settleRoom').disabled = true;
+        }
+    });
+
+    document.getElementById('settleBtn').addEventListener('click', async () => {
+        if (!selectedStudent) {
+            alert('Сначала выберите студента');
+            return;
+        }
+        const roomId = document.getElementById('settleRoom').value;
+        const dateIn = document.getElementById('settleDate').value;
+        if (!roomId || !dateIn) {
+            alert('Выберите комнату и дату');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE}/Residence/settle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    passportNum: selectedStudent.passportNum,
+                    roomId: parseInt(roomId),
+                    dateIn: dateIn
+                })
+            });
+            if (!response.ok) throw new Error(await response.text());
+            document.getElementById('settleResult').innerHTML = '<div class="alert alert-success">✅ Заселение выполнено!</div>';
+            // Обновить информацию о студенте (повторный поиск)
+            const updated = await apiRequest(`${API_BASE}/Students/${selectedStudent.passportNum}`);
+            if (updated) await selectStudentForActions(updated);
+        } catch(e) {
+            document.getElementById('settleResult').innerHTML = `<div class="alert alert-danger">❌ ${e.message}</div>`;
+        }
+    });
+
+    document.getElementById('evictBtn').addEventListener('click', async () => {
+        if (!selectedStudent || !selectedStudent.orderNumber) {
+            alert('Студент не проживает или нет номера приказа');
+            return;
+        }
+        const dateOut = document.getElementById('evictDate').value;
+        if (!dateOut) {
+            alert('Выберите дату выселения');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE}/Residence/evict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderNumber: selectedStudent.orderNumber, dateOut: dateOut })
+            });
+            if (!response.ok) throw new Error(await response.text());
+            document.getElementById('evictResult').innerHTML = '<div class="alert alert-success">✅ Выселение выполнено!</div>';
+            // Обновить данные студента
+            const updated = await apiRequest(`${API_BASE}/Students/${selectedStudent.passportNum}`);
+            if (updated) await selectStudentForActions(updated);
+        } catch(e) {
+            document.getElementById('evictResult').innerHTML = `<div class="alert alert-danger">❌ ${e.message}</div>`;
+        }
+    });
+
+    // Изменение данных и переселение
+    async function loadGroupsForUpdate() {
+        try {
+            const groups = await apiRequest(`${API_BASE}/Groups`);
+            const select = document.getElementById('updateGroup');
+            select.innerHTML = '<option value="">Без изменений</option>';
+            groups.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.groupName;
+                opt.textContent = `${g.groupName} (${g.facultyName}, ${g.course} курс)`;
+                select.appendChild(opt);
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadBuildingsForUpdate() {
+        const buildings = await loadBuildingsList();
+        const select = document.getElementById('updateBuilding');
+        select.innerHTML = '<option value="">Без изменений</option>';
+        buildings.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            select.appendChild(opt);
+        });
+    }
+
+    loadGroupsForUpdate();
+    loadBuildingsForUpdate();
+
+    document.getElementById('updateBuilding').addEventListener('change', async (e) => {
+        const building = e.target.value;
+        if (building && building !== "") {
+            const rooms = await loadFreeRoomsByBuilding(building);
+            const roomSelect = document.getElementById('updateRoom');
+            roomSelect.innerHTML = '<option value="">Без изменений</option>';
+            rooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.roomId;
+                opt.textContent = `${r.roomNumber} (свободно мест: ${r.freePlaces})`;
+                roomSelect.appendChild(opt);
+            });
+            roomSelect.disabled = false;
+        } else {
+            document.getElementById('updateRoom').innerHTML = '<option value="">Без изменений</option>';
+            document.getElementById('updateRoom').disabled = true;
+        }
+    });
+
+    document.getElementById('updateStudentBtn').addEventListener('click', async () => {
+        if (!selectedStudent) {
+            alert('Сначала выберите студента');
+            return;
+        }
+        const newFio = document.getElementById('updateFio').value.trim();
+        const newGroup = document.getElementById('updateGroup').value;
+        const newRoomId = document.getElementById('updateRoom').value;
+        const errors = [];
+
+        if (newFio || newGroup) {
+            const body = { passportNum: selectedStudent.passportNum };
+            if (newFio) body.fio = newFio;
+            if (newGroup) body.groupName = newGroup;
+            try {
+                const resp = await fetch(`${API_BASE}/Students/${selectedStudent.passportNum}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!resp.ok) throw new Error(await resp.text());
+            } catch(e) {
+                errors.push(`Ошибка обновления ФИО/группы: ${e.message}`);
+            }
+        }
+
+        if (newRoomId && newRoomId !== "") {
+            if (!selectedStudent.orderNumber) {
+                errors.push('Студент не проживает, нельзя переселить.');
+            } else {
+                try {
+                    // Выселение
+                    const evictResp = await fetch(`${API_BASE}/Residence/evict`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderNumber: selectedStudent.orderNumber,
+                            dateOut: new Date().toISOString().slice(0,10)
+                        })
+                    });
+                    if (!evictResp.ok) throw new Error(await evictResp.text());
+                    // Заселение
+                    const settleResp = await fetch(`${API_BASE}/Residence/settle`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            passportNum: selectedStudent.passportNum,
+                            roomId: parseInt(newRoomId),
+                            dateIn: new Date().toISOString().slice(0,10)
+                        })
+                    });
+                    if (!settleResp.ok) throw new Error(await settleResp.text());
+                } catch(e) {
+                    errors.push(`Ошибка переселения: ${e.message}`);
+                }
+            }
+        }
+
+        if (errors.length === 0) {
+            document.getElementById('updateResult').innerHTML = '<div class="alert alert-success">✅ Данные обновлены</div>';
+            // Обновить выбранного студента
+            const updated = await apiRequest(`${API_BASE}/Students/${selectedStudent.passportNum}`);
+            if (updated) await selectStudentForActions(updated);
+        } else {
+            document.getElementById('updateResult').innerHTML = `<div class="alert alert-danger">${errors.join('; ')}</div>`;
+        }
+    });
+
+    document.getElementById('clearSelectedStudent').addEventListener('click', () => {
+        selectedStudent = null;
+        document.getElementById('selectedStudentCard').style.display = 'none';
+        document.getElementById('settleBuilding').disabled = true;
+        document.getElementById('settleRoom').disabled = true;
+        document.getElementById('settleBtn').disabled = true;
+        document.getElementById('evictBtn').disabled = true;
+        document.getElementById('studentSearchResults').innerHTML = '';
+        document.getElementById('actionSearchInput').value = '';
+    });
+
+    // --- Инициализация ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadFaculties();
+        await loadAllGroups();
+        updateGroupsFilter();
+
+        document.getElementById('facultyFilter').addEventListener('change', updateGroupsFilter);
+        document.getElementById('courseFilter').addEventListener('change', updateGroupsFilter);
+        document.getElementById('applyFilterBtn').addEventListener('click', loadStudents);
+        document.getElementById('searchByNameBtn').addEventListener('click', loadStudents);
+
+        document.getElementById('loadResidentsBtn').addEventListener('click', loadResidents);
+        document.getElementById('loadFreeRoomsBtn').addEventListener('click', loadFreeRooms);
+        document.getElementById('loadDebtsBtn').addEventListener('click', loadDebts);
+        document.getElementById('loadOccupancyBtn').addEventListener('click', loadOccupancy);
+
+        document.getElementById('actionSearchBtn').addEventListener('click', performStudentSearch);
+        await loadBuildingsList();
+    });
+</script>
+</body>
+</html>
